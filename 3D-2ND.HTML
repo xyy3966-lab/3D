@@ -1,0 +1,2238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Elite Forge Gym - Ultimate 3D Experience</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: #000;
+      color: #fff;
+      overflow-x: hidden;
+      cursor: none; /* Desktop default */
+    }
+
+    /* Hide custom cursor and restore default cursor on touch devices */
+    @media (hover: none) and (pointer: coarse) {
+      body { cursor: auto; }
+      .custom-cursor { display: none !important; }
+    }
+    
+    /* Custom Cursor */
+    .custom-cursor {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #00ffff;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 10000;
+      transition: transform 0.2s ease;
+      mix-blend-mode: difference;
+    }
+    
+    .custom-cursor.clicked {
+      transform: scale(1.5);
+      background: rgba(0, 255, 255, 0.3);
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    
+    ::-webkit-scrollbar-track {
+      background: #111;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+      background: linear-gradient(#00ffff, #ff0055);
+      border-radius: 10px;
+    }
+    
+    #root {
+      width: 100%;
+      min-height: 100vh;
+    }
+    
+    /* Particle Background */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    /* 3D Button Styles */
+    .btn-3d {
+      position: relative;
+      transform-style: preserve-3d;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .btn-3d::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: inherit;
+      transform: translateZ(-10px);
+      filter: brightness(0.7);
+      border-radius: inherit;
+    }
+    
+    .btn-3d:hover {
+      transform: translateZ(20px) scale(1.05);
+    }
+    
+    .btn-3d:active {
+      transform: translateZ(5px) scale(0.98);
+    }
+    
+    /* Modal Styles */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(20px);
+    }
+    
+    .modal.active {
+      opacity: 1;
+      pointer-events: all;
+    }
+    
+    .modal-content {
+      background: rgba(20, 20, 20, 0.95);
+      border: 2px solid #00ffff;
+      border-radius: 20px;
+      padding: 3rem;
+      max-width: 600px;
+      width: 90%;
+      transform: scale(0.8) rotateX(-10deg);
+      transition: transform 0.3s ease;
+      box-shadow: 0 30px 60px rgba(0, 255, 255, 0.3);
+    }
+    
+    .modal.active .modal-content {
+      transform: scale(1) rotateX(0deg);
+    }
+    
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #00ffff;
+      font-weight: 600;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 1rem;
+      background: rgba(0, 255, 255, 0.05);
+      border: 2px solid rgba(0, 255, 255, 0.3);
+      border-radius: 10px;
+      color: #fff;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #00ffff;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      transform: scale(1.02);
+    }
+    
+    /* Navigation */
+    .nav-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.5rem 5%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+      z-index: 4000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+    
+    .nav-link {
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      position: relative;
+      padding: 0.5rem 1rem;
+    }
+    
+    .nav-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #00ffff, #ff0055);
+      transition: width 0.3s ease;
+    }
+    
+    .nav-link:hover::after {
+      width: 100%;
+    }
+    
+    /* Notification Toast */
+    .toast {
+      position: fixed;
+      top: 100px;
+      right: -400px;
+      background: linear-gradient(135deg, #00ffff, #ff0055);
+      padding: 1.5rem 2rem;
+      border-radius: 15px;
+      z-index: 6000;
+      transition: right 0.5s ease;
+      box-shadow: 0 20px 40px rgba(0, 255, 255, 0.4);
+    }
+    
+    .toast.show {
+      right: 2rem;
+    }
+    
+    /* Stats Counter */
+    .stat-number {
+      font-size: 3rem;
+      font-weight: 900;
+      color: #00ffff;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+    }
+    
+    /* Image Gallery */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      padding: 2rem 0;
+    }
+    
+    .gallery-item {
+      position: relative;
+      height: 300px;
+      border-radius: 15px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.5s ease;
+      transform-style: preserve-3d;
+    }
+    
+    .gallery-item:hover {
+      transform: scale(1.05) rotateY(5deg);
+    }
+    
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    
+    .gallery-item:hover img {
+      transform: scale(1.1);
+    }
+    
+    .gallery-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      padding: 1.5rem;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+      transform: translateY(100%);
+      transition: transform 0.3s ease;
+    }
+    
+    .gallery-item:hover .gallery-overlay {
+      transform: translateY(0);
+    }
+    
+    /* Pricing Cards 3D */
+    .pricing-card {
+      transform-style: preserve-3d;
+      transition: all 0.5s ease;
+    }
+    
+    .pricing-card:hover {
+      transform: rotateY(10deg) translateZ(30px);
+    }
+    
+    /* Testimonial Carousel */
+    .testimonial-carousel {
+      position: relative;
+      height: 400px;
+      perspective: 1000px;
+    }
+    
+    .testimonial-slide {
+      position: absolute;
+      width: 80%;
+      left: 10%;
+      opacity: 0;
+      transform: translateX(-100%) rotateY(-45deg);
+      transition: all 0.5s ease;
+    }
+    
+    .testimonial-slide.active {
+      opacity: 1;
+      transform: translateX(0) rotateY(0);
+    }
+    
+    /* BMI Calculator */
+    .calculator-result {
+      margin-top: 2rem;
+      padding: 2rem;
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 85, 0.1));
+      border-radius: 15px;
+      border: 2px solid #00ffff;
+      transform: scale(0);
+      transition: transform 0.5s ease;
+    }
+    
+    .calculator-result.show {
+      transform: scale(1);
+    }
+
+    /* --- MOBILE RESPONSIVE FIXES (START) --- */
+    @media (max-width: 768px) {
+      /* Hamburger Menu Styling */
+      .hamburger {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        cursor: pointer;
+        z-index: 4002; /* Above nav */
+      }
+
+      .bar {
+        width: 30px;
+        height: 3px;
+        background-color: #fff;
+        transition: 0.3s;
+        border-radius: 2px;
+      }
+
+      /* Hide desktop links and Join button */
+      .nav-links, 
+      .nav-bar > button:not(.hamburger) {
+        display: none;
+      }
+
+      /* Mobile Menu Overlay */
+      .mobile-menu {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 75%;
+        height: 100vh;
+        background: rgba(0,0,0,0.98);
+        backdrop-filter: blur(20px);
+        z-index: 4001;
+        transition: right 0.4s ease;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 2rem;
+        border-left: 1px solid rgba(0, 255, 255, 0.3);
+      }
+
+      .mobile-menu.active {
+        right: 0;
+      }
+      
+      .mobile-menu .nav-link {
+        font-size: 1.5rem;
+        color: #fff;
+        text-decoration: none;
+        font-weight: bold;
+      }
+      
+      /* Adjust Layout Spacing */
+      section {
+        padding: 60px 20px !important;
+      }
+      
+      .gallery-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+      
+      .testimonial-carousel {
+        height: auto;
+        min-height: 400px;
+      }
+
+      /* Disable heavy 3D transforms on mobile for stability */
+      .pricing-card {
+        transform: none !important;
+      }
+      .pricing-card:hover {
+        transform: none !important;
+      }
+    }
+    /* --- MOBILE RESPONSIVE FIXES (END) --- */
+  </style>
+</head>
+<body>
+  <div class="custom-cursor"></div>
+  <div id="root"></div>
+
+  <!-- React and ReactDOM -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+  <script type="module">
+    const { useState, useEffect, useRef } = React;
+    
+    gsap.registerPlugin(ScrollTrigger);
+
+    function EliteForge3D() {
+      const containerRef = useRef();
+      const sceneRef = useRef();
+      const [isLoaded, setIsLoaded] = useState(false);
+      const [soundEnabled, setSoundEnabled] = useState(false);
+      const [showModal, setShowModal] = useState(null);
+      const [showToast, setShowToast] = useState(false);
+      const [toastMessage, setToastMessage] = useState('');
+      const [currentTestimonial, setCurrentTestimonial] = useState(0);
+      const [stats, setStats] = useState({ members: 0, trainers: 0, classes: 0, satisfaction: 0 });
+      const [formData, setFormData] = useState({
+        name: '', email: '', phone: '', membership: '', message: ''
+      });
+      const [bmiData, setBmiData] = useState({ weight: '', height: '', result: null });
+      const [showBmiResult, setShowBmiResult] = useState(false);
+      
+      // NEW: Mobile Menu State
+      const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+      // Custom Cursor Effect
+      useEffect(() => {
+        const cursor = document.querySelector('.custom-cursor');
+        // Only run cursor logic if not a touch device
+        if (window.matchMedia("(pointer: fine)").matches) {
+            let mouseX = 0, mouseY = 0;
+            let cursorX = 0, cursorY = 0;
+            
+            const moveCursor = (e) => {
+              mouseX = e.clientX;
+              mouseY = e.clientY;
+            };
+            
+            const animateCursor = () => {
+              cursorX += (mouseX - cursorX) * 0.2;
+              cursorY += (mouseY - cursorY) * 0.2;
+              cursor.style.left = cursorX + 'px';
+              cursor.style.top = cursorY + 'px';
+              requestAnimationFrame(animateCursor);
+            };
+            
+            const handleClick = () => {
+              cursor.classList.add('clicked');
+              setTimeout(() => cursor.classList.remove('clicked'), 200);
+            };
+            
+            document.addEventListener('mousemove', moveCursor);
+            document.addEventListener('click', handleClick);
+            animateCursor();
+            
+            return () => {
+              document.removeEventListener('mousemove', moveCursor);
+              document.removeEventListener('click', handleClick);
+            };
+        }
+      }, []);
+
+      // Stats Counter Animation
+      useEffect(() => {
+        const targetStats = { members: 5000, trainers: 50, classes: 100, satisfaction: 98 };
+        const duration = 2000;
+        const steps = 60;
+        const interval = duration / steps;
+        
+        let step = 0;
+        const timer = setInterval(() => {
+          step++;
+          const progress = step / steps;
+          setStats({
+            members: Math.floor(targetStats.members * progress),
+            trainers: Math.floor(targetStats.trainers * progress),
+            classes: Math.floor(targetStats.classes * progress),
+            satisfaction: Math.floor(targetStats.satisfaction * progress)
+          });
+          
+          if (step >= steps) clearInterval(timer);
+        }, interval);
+        
+        return () => clearInterval(timer);
+      }, []);
+
+      // Testimonial Carousel
+      useEffect(() => {
+        const timer = setInterval(() => {
+          setCurrentTestimonial(prev => (prev + 1) % 3);
+        }, 5000);
+        return () => clearInterval(timer);
+      }, []);
+
+      // Three.js Scene
+      useEffect(() => {
+        if (!containerRef.current) return;
+
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.015);
+        sceneRef.current = scene;
+
+        const camera = new THREE.PerspectiveCamera(
+          75,
+          window.innerWidth / window.innerHeight,
+          0.1,
+          1000
+        );
+        camera.position.set(0, 3, 20);
+
+        const renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          alpha: true,
+          powerPreference: 'high-performance'
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.3;
+        containerRef.current.appendChild(renderer.domElement);
+
+        // Advanced Lighting
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        keyLight.position.set(-8, 12, 8);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.width = 2048;
+        keyLight.shadow.mapSize.height = 2048;
+        scene.add(keyLight);
+
+        const rimLight1 = new THREE.PointLight(0x00ffff, 1.2, 60);
+        rimLight1.position.set(10, 5, -8);
+        scene.add(rimLight1);
+
+        const rimLight2 = new THREE.PointLight(0xff0055, 1.0, 50);
+        rimLight2.position.set(-10, 4, -8);
+        scene.add(rimLight2);
+
+        const spotLight = new THREE.SpotLight(0xffffff, 2.5);
+        spotLight.position.set(0, 15, 0);
+        spotLight.angle = Math.PI / 5;
+        spotLight.penumbra = 0.5;
+        spotLight.castShadow = true;
+        scene.add(spotLight);
+
+        const ambientLight = new THREE.AmbientLight(0x333333, 0.5);
+        scene.add(ambientLight);
+
+        // Materials
+        const metalMaterial = new THREE.MeshStandardMaterial({
+          color: 0x888888,
+          metalness: 0.95,
+          roughness: 0.2
+        });
+
+        const neonMaterial = new THREE.MeshStandardMaterial({
+          color: 0x00ffff,
+          emissive: 0x00ffff,
+          emissiveIntensity: 0.5,
+          metalness: 0.8,
+          roughness: 0.2
+        });
+
+        // Floor with grid
+        const floorGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
+        const floorMaterial = new THREE.MeshStandardMaterial({
+          color: 0x0a0a0a,
+          roughness: 0.3,
+          metalness: 0.7,
+          wireframe: false
+        });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -3;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // Grid overlay
+        const gridHelper = new THREE.GridHelper(100, 50, 0x00ffff, 0x004444);
+        gridHelper.position.y = -2.9;
+        scene.add(gridHelper);
+
+        // Floating gym equipment
+        const floatingObjects = [];
+
+        function createDumbbell(x, y, z) {
+          const group = new THREE.Group();
+          
+          const barGeometry = new THREE.CylinderGeometry(0.1, 0.1, 2, 16);
+          const bar = new THREE.Mesh(barGeometry, metalMaterial);
+          bar.rotation.z = Math.PI / 2;
+          bar.castShadow = true;
+          group.add(bar);
+          
+          for (let i = 0; i < 2; i++) {
+            const weightGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+            const weight = new THREE.Mesh(weightGeometry, metalMaterial);
+            weight.rotation.z = Math.PI / 2;
+            weight.position.x = i === 0 ? -0.9 : 0.9;
+            weight.castShadow = true;
+            group.add(weight);
+          }
+          
+          group.position.set(x, y, z);
+          return group;
+        }
+
+        function createKettlebell(x, y, z) {
+          const group = new THREE.Group();
+          
+          const ballGeometry = new THREE.SphereGeometry(0.4, 32, 32);
+          const ball = new THREE.Mesh(ballGeometry, metalMaterial);
+          ball.castShadow = true;
+          group.add(ball);
+          
+          const handleGeometry = new THREE.TorusGeometry(0.3, 0.08, 16, 32);
+          const handle = new THREE.Mesh(handleGeometry, metalMaterial);
+          handle.position.y = 0.4;
+          handle.rotation.x = Math.PI / 2;
+          handle.castShadow = true;
+          group.add(handle);
+          
+          group.position.set(x, y, z);
+          return group;
+        }
+
+        function createBarbell(x, y, z) {
+          const group = new THREE.Group();
+          
+          const barGeometry = new THREE.CylinderGeometry(0.08, 0.08, 4, 16);
+          const bar = new THREE.Mesh(barGeometry, metalMaterial);
+          bar.rotation.z = Math.PI / 2;
+          bar.castShadow = true;
+          group.add(bar);
+          
+          for (let i = 0; i < 2; i++) {
+            for (let j = 0; j < 3; j++) {
+              const plateGeometry = new THREE.CylinderGeometry(0.5, 0.5, 0.15, 32);
+              const plate = new THREE.Mesh(plateGeometry, metalMaterial);
+              plate.rotation.z = Math.PI / 2;
+              plate.position.x = (i === 0 ? -1.5 : 1.5) + (j * 0.2 * (i === 0 ? -1 : 1));
+              plate.castShadow = true;
+              group.add(plate);
+            }
+          }
+          
+          group.position.set(x, y, z);
+          return group;
+        }
+
+        // Add floating equipment
+        const dumbbell1 = createDumbbell(-5, 2, -5);
+        floatingObjects.push(dumbbell1);
+        scene.add(dumbbell1);
+
+        const kettlebell1 = createKettlebell(5, 1, -8);
+        floatingObjects.push(kettlebell1);
+        scene.add(kettlebell1);
+
+        const barbell1 = createBarbell(0, 3, -10);
+        floatingObjects.push(barbell1);
+        scene.add(barbell1);
+
+        const dumbbell2 = createDumbbell(-7, 4, -3);
+        floatingObjects.push(dumbbell2);
+        scene.add(dumbbell2);
+
+        const kettlebell2 = createKettlebell(7, 2, -5);
+        floatingObjects.push(kettlebell2);
+        scene.add(kettlebell2);
+
+        // Particles
+        const particleGeometry = new THREE.BufferGeometry();
+        const particleCount = 2000;
+        const positions = new Float32Array(particleCount * 3);
+        const colors = new Float32Array(particleCount * 3);
+
+        for (let i = 0; i < particleCount * 3; i += 3) {
+          positions[i] = (Math.random() - 0.5) * 50;
+          positions[i + 1] = Math.random() * 30;
+          positions[i + 2] = (Math.random() - 0.5) * 50;
+          
+          const color = Math.random() > 0.5 ? 
+            new THREE.Color(0x00ffff) : 
+            new THREE.Color(0xff0055);
+          colors[i] = color.r;
+          colors[i + 1] = color.g;
+          colors[i + 2] = color.b;
+        }
+
+        particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        particleGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+        const particleMaterial = new THREE.PointsMaterial({
+          size: 0.1,
+          vertexColors: true,
+          transparent: true,
+          opacity: 0.8,
+          blending: THREE.AdditiveBlending
+        });
+
+        const particles = new THREE.Points(particleGeometry, particleMaterial);
+        scene.add(particles);
+
+        // Neon rings
+        const rings = [];
+        for (let i = 0; i < 3; i++) {
+          const ringGeometry = new THREE.TorusGeometry(3 + i * 2, 0.1, 16, 100);
+          const ring = new THREE.Mesh(ringGeometry, neonMaterial);
+          ring.position.y = 0;
+          ring.rotation.x = Math.PI / 2;
+          rings.push(ring);
+          scene.add(ring);
+        }
+
+        // Logo sphere with pulsing effect
+        const logoGeometry = new THREE.IcosahedronGeometry(1.5, 2);
+        const logoMaterial = new THREE.MeshStandardMaterial({
+          color: 0x00ffff,
+          emissive: 0x00ffff,
+          emissiveIntensity: 0.6,
+          metalness: 0.9,
+          roughness: 0.1,
+          wireframe: true
+        });
+        const logoSphere = new THREE.Mesh(logoGeometry, logoMaterial);
+        logoSphere.position.set(0, 0, -5);
+        scene.add(logoSphere);
+
+        // Mouse interaction variables
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetX = 0;
+        let targetY = 0;
+
+        const handleMouseMove = (e) => {
+          mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+          mouseY = -(e.clientY / window.innerHeight) * 2 + 1;
+        };
+
+        // NEW: Mobile Touch Interaction
+        const handleTouchMove = (e) => {
+          if(e.touches.length > 0) {
+            mouseX = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(e.touches[0].clientY / window.innerHeight) * 2 + 1;
+          }
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('touchmove', handleTouchMove, { passive: true }); // passive true for scroll performance
+
+        // Scroll-based camera movement
+        const handleScroll = () => {
+          const scrollPercent = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+          camera.position.z = 20 - scrollPercent * 15;
+          camera.position.y = 3 + scrollPercent * 5;
+        };
+
+        window.addEventListener('scroll', handleScroll);
+
+        // Animation loop
+        const clock = new THREE.Clock();
+
+        function animate() {
+          requestAnimationFrame(animate);
+          const elapsedTime = clock.getElapsedTime();
+
+          // Smooth camera follow mouse/touch
+          targetX = mouseX * 2;
+          targetY = mouseY * 2;
+          camera.position.x += (targetX - camera.position.x) * 0.05;
+          camera.position.y += (targetY - camera.position.y) * 0.05;
+          camera.lookAt(0, 0, -5);
+
+          // Animate floating equipment
+          floatingObjects.forEach((obj, i) => {
+            obj.rotation.x = Math.sin(elapsedTime + i) * 0.3;
+            obj.rotation.y = Math.cos(elapsedTime + i) * 0.3;
+            obj.position.y += Math.sin(elapsedTime * 2 + i) * 0.01;
+          });
+
+          // Animate particles
+          const positions = particles.geometry.attributes.position.array;
+          for (let i = 1; i < positions.length; i += 3) {
+            positions[i] -= 0.02;
+            if (positions[i] < 0) {
+              positions[i] = 30;
+            }
+          }
+          particles.geometry.attributes.position.needsUpdate = true;
+          particles.rotation.y = elapsedTime * 0.05;
+
+          // Animate rings
+          rings.forEach((ring, i) => {
+            ring.rotation.z = elapsedTime * (0.2 + i * 0.1);
+            ring.scale.set(
+              1 + Math.sin(elapsedTime * 2 + i) * 0.1,
+              1 + Math.sin(elapsedTime * 2 + i) * 0.1,
+              1
+            );
+          });
+
+          // Animate logo sphere
+          logoSphere.rotation.x = elapsedTime * 0.5;
+          logoSphere.rotation.y = elapsedTime * 0.3;
+          const pulseFactor = 1 + Math.sin(elapsedTime * 3) * 0.1;
+          logoSphere.scale.set(pulseFactor, pulseFactor, pulseFactor);
+          logoMaterial.emissiveIntensity = 0.4 + Math.sin(elapsedTime * 3) * 0.3;
+
+          // Animate lights
+          rimLight1.intensity = 1.2 + Math.sin(elapsedTime * 2) * 0.3;
+          rimLight2.intensity = 1.0 + Math.cos(elapsedTime * 2) * 0.3;
+          
+          rimLight1.position.x = 10 + Math.sin(elapsedTime) * 3;
+          rimLight2.position.x = -10 + Math.cos(elapsedTime) * 3;
+
+          renderer.render(scene, camera);
+        }
+
+        animate();
+        setIsLoaded(true);
+
+        // Resize handler
+        const handleResize = () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        // Cleanup
+        return () => {
+          window.removeEventListener('mousemove', handleMouseMove);
+          window.removeEventListener('touchmove', handleTouchMove);
+          window.removeEventListener('scroll', handleScroll);
+          window.removeEventListener('resize', handleResize);
+          renderer.dispose();
+        };
+      }, []);
+
+      // Show toast notification
+      const showNotification = (message) => {
+        setToastMessage(message);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      };
+
+      // Handle form submission
+      const handleSubmit = (e) => {
+        e.preventDefault();
+        showNotification(`Thank you ${formData.name}! We'll contact you soon.`);
+        setShowModal(null);
+        setMobileMenuOpen(false); // Close mobile menu if open
+        setFormData({ name: '', email: '', phone: '', membership: '', message: '' });
+      };
+
+      // Handle BMI calculation
+      const calculateBMI = (e) => {
+        e.preventDefault();
+        const weight = parseFloat(bmiData.weight);
+        const height = parseFloat(bmiData.height) / 100; // convert to meters
+        const bmi = (weight / (height * height)).toFixed(1);
+        
+        let category = '';
+        if (bmi < 18.5) category = 'Underweight';
+        else if (bmi < 25) category = 'Normal weight';
+        else if (bmi < 30) category = 'Overweight';
+        else category = 'Obese';
+        
+        setBmiData({ ...bmiData, result: { bmi, category } });
+        setShowBmiResult(true);
+        showNotification(`Your BMI is ${bmi} - ${category}`);
+      };
+
+      // Smooth scroll to section
+      const scrollToSection = (id) => {
+        setMobileMenuOpen(false); // Close menu on click
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+      };
+
+      const testimonials = [
+        {
+          name: "Sarah Johnson",
+          role: "Marathon Runner",
+          text: "Elite Forge transformed my training routine. The 3D environment makes every workout feel like an adventure!",
+          rating: 5
+        },
+        {
+          name: "Mike Chen",
+          role: "Bodybuilder",
+          text: "Best gym experience ever! The interactive features and expert trainers helped me achieve my goals faster.",
+          rating: 5
+        },
+        {
+          name: "Emma Davis",
+          role: "Yoga Instructor",
+          text: "The mindfulness zone and state-of-the-art equipment create the perfect balance for holistic wellness.",
+          rating: 5
+        }
+      ];
+
+      const features = [
+        "Olympic-Grade Equipment",
+        "24/7 Access",
+        "Personal Training",
+        "Group Classes",
+        "Recovery Zone",
+        "Nutrition Coaching",
+        "Virtual Reality Training",
+        "Performance Analytics"
+      ];
+
+      const galleryImages = [
+        { url: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800", title: "Cardio Zone" },
+        { url: "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=800", title: "Strength Training" },
+        { url: "https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=800", title: "Yoga Studio" },
+        { url: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=800", title: "Recovery Area" },
+        { url: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800", title: "Group Classes" },
+        { url: "https://images.unsplash.com/photo-1623874514711-0f321325f318?w=800", title: "Personal Training" }
+      ];
+
+      return React.createElement('div', { style: { position: 'relative' } },
+        // Canvas Container
+        React.createElement('div', { 
+          ref: containerRef,
+          style: { 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            width: '100%', 
+            height: '100%',
+            zIndex: 0
+          }
+        }),
+
+        // Navigation
+        React.createElement('nav', { className: 'nav-bar' },
+          React.createElement('div', { 
+            style: { 
+              fontSize: '1.5rem', 
+              fontWeight: '900', 
+              background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              cursor: 'pointer',
+              zIndex: 4003
+            },
+            onClick: () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setMobileMenuOpen(false); }
+          }, 'ELITE FORGE'),
+          
+          // Desktop Links
+          React.createElement('ul', { className: 'nav-links' },
+            ['Home', 'Features', 'Gallery', 'Pricing', 'Contact'].map(item =>
+              React.createElement('li', { key: item },
+                React.createElement('a', {
+                  className: 'nav-link',
+                  onClick: (e) => {
+                    e.preventDefault();
+                    scrollToSection(item.toLowerCase());
+                  },
+                  style: { cursor: 'pointer' }
+                }, item)
+              )
+            )
+          ),
+
+          // Hamburger Icon (Mobile Only)
+          React.createElement('div', { 
+            className: 'hamburger',
+            onClick: () => setMobileMenuOpen(!mobileMenuOpen)
+          },
+            React.createElement('span', { className: 'bar', style: { transform: mobileMenuOpen ? 'rotate(45deg) translate(5px, 6px)' : 'none' } }),
+            React.createElement('span', { className: 'bar', style: { opacity: mobileMenuOpen ? 0 : 1 } }),
+            React.createElement('span', { className: 'bar', style: { transform: mobileMenuOpen ? 'rotate(-45deg) translate(5px, -6px)' : 'none' } })
+          ),
+
+          // Join Button (Desktop Only)
+          React.createElement('button', {
+            onClick: () => setShowModal('join'),
+            className: 'btn-3d',
+            style: {
+              padding: '0.75rem 2rem',
+              background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+              border: 'none',
+              borderRadius: '25px',
+              color: '#fff',
+              fontWeight: '900',
+              fontSize: '1rem',
+              cursor: 'pointer'
+            }
+          }, 'JOIN NOW')
+        ),
+
+        // Mobile Menu Overlay
+        React.createElement('div', { 
+          className: `mobile-menu ${mobileMenuOpen ? 'active' : ''}`
+        },
+          ['Home', 'Features', 'Gallery', 'Pricing', 'Contact'].map(item =>
+            React.createElement('a', {
+              key: item,
+              className: 'nav-link',
+              onClick: (e) => {
+                e.preventDefault();
+                scrollToSection(item.toLowerCase());
+              },
+              style: { cursor: 'pointer' }
+            }, item)
+          ),
+          React.createElement('button', {
+            onClick: () => { setShowModal('join'); setMobileMenuOpen(false); },
+            className: 'btn-3d',
+            style: {
+              padding: '1rem 3rem',
+              background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+              border: 'none',
+              borderRadius: '25px',
+              color: '#fff',
+              fontWeight: '900',
+              fontSize: '1.2rem',
+              cursor: 'pointer'
+            }
+          }, 'JOIN NOW')
+        ),
+
+        // Main Content
+        React.createElement('div', { 
+          style: { 
+            position: 'relative', 
+            zIndex: 10,
+            pointerEvents: 'none'
+          } 
+        },
+          // Hero Section
+          React.createElement('section', {
+            id: 'home',
+            style: {
+              minHeight: '100vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              textAlign: 'center',
+              padding: '0 20px',
+              pointerEvents: 'all'
+            }
+          },
+            React.createElement('h1', {
+              style: {
+                fontSize: 'clamp(3rem, 10vw, 8rem)',
+                fontWeight: '900',
+                marginBottom: '1rem',
+                background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+                animation: 'fadeInUp 1s ease'
+              }
+            }, 'Elite Forge'),
+            React.createElement('p', {
+              style: {
+                fontSize: 'clamp(1.2rem, 3vw, 2rem)',
+                marginBottom: '3rem',
+                opacity: 0.9,
+                maxWidth: '800px'
+              }
+            }, 'Experience the Future of Fitness'),
+            React.createElement('div', {
+              style: { display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }
+            },
+              React.createElement('button', {
+                onClick: () => setShowModal('join'),
+                className: 'btn-3d',
+                style: {
+                  padding: '1.5rem 3rem',
+                  fontSize: '1.2rem',
+                  fontWeight: '900',
+                  background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+                  border: 'none',
+                  borderRadius: '50px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  boxShadow: '0 20px 40px rgba(0, 255, 255, 0.4)'
+                }
+              }, 'Start Your Journey'),
+              React.createElement('button', {
+                onClick: () => setShowModal('tour'),
+                className: 'btn-3d',
+                style: {
+                  padding: '1.5rem 3rem',
+                  fontSize: '1.2rem',
+                  fontWeight: '900',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '2px solid #00ffff',
+                  borderRadius: '50px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase',
+                  backdropFilter: 'blur(10px)'
+                }
+              }, 'Virtual Tour')
+            )
+          ),
+
+          // Stats Section
+          React.createElement('section', {
+            style: {
+              padding: '100px 20px',
+              background: 'rgba(0, 0, 0, 0.5)',
+              backdropFilter: 'blur(20px)',
+              pointerEvents: 'all'
+            }
+          },
+            React.createElement('div', {
+              style: {
+                maxWidth: '1400px',
+                margin: '0 auto',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '3rem',
+                textAlign: 'center'
+              }
+            },
+              [
+                { label: 'Active Members', value: stats.members, suffix: '+' },
+                { label: 'Expert Trainers', value: stats.trainers, suffix: '+' },
+                { label: 'Weekly Classes', value: stats.classes, suffix: '+' },
+                { label: 'Satisfaction', value: stats.satisfaction, suffix: '%' }
+              ].map((stat, i) =>
+                React.createElement('div', { key: i },
+                  React.createElement('div', { className: 'stat-number' }, 
+                    stat.value + stat.suffix
+                  ),
+                  React.createElement('div', {
+                    style: { 
+                      fontSize: '1.2rem', 
+                      opacity: 0.7, 
+                      marginTop: '0.5rem',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em'
+                    }
+                  }, stat.label)
+                )
+              )
+            )
+          ),
+
+          // Features Section
+          React.createElement('section', {
+            id: 'features',
+            style: {
+              minHeight: '100vh',
+              padding: '100px 20px',
+              pointerEvents: 'all'
+            }
+          },
+            React.createElement('div', { style: { maxWidth: '1400px', margin: '0 auto' } },
+              React.createElement('h2', {
+                style: {
+                  fontSize: 'clamp(2rem, 5vw, 4rem)',
+                  color: '#00ffff',
+                  textAlign: 'center',
+                  marginBottom: '4rem',
+                  textTransform: 'uppercase',
+                  fontWeight: '900'
+                }
+              }, 'Premium Features'),
+              React.createElement('div', {
+                style: {
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                  gap: '2rem'
+                }
+              },
+                features.map((feature, i) =>
+                  React.createElement('div', {
+                    key: i,
+                    className: 'btn-3d',
+                    onMouseEnter: (e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg, rgba(0, 255, 255, 0.2), rgba(255, 0, 85, 0.2))';
+                    },
+                    onMouseLeave: (e) => {
+                      e.currentTarget.style.background = 'rgba(0, 255, 255, 0.05)';
+                    },
+                    style: {
+                      padding: '2rem',
+                      background: 'rgba(0, 255, 255, 0.05)',
+                      backdropFilter: 'blur(10px)',
+                      border: '1px solid rgba(0, 255, 255, 0.2)',
+                      borderRadius: '15px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }
+                  },
+                    React.createElement('h3', {
+                      style: {
+                        fontSize: '1.3rem',
+                        color: '#00ffff',
+                        marginBottom: '0.5rem',
+                        fontWeight: '700'
+                      }
+                    }, feature),
+                    React.createElement('p', {
+                      style: { opacity: 0.7, fontSize: '0.95rem' }
+                    }, 'State-of-the-art ' + feature.toLowerCase() + ' designed for peak performance')
+                  )
+                )
+              )
+            )
+          ),
+
+          // Gallery Section
+          React.createElement('section', {
+            id: 'gallery',
+            style: {
+              minHeight: '100vh',
+              padding: '100px 20px',
+              background: 'rgba(0, 0, 0, 0.3)',
+              backdropFilter: 'blur(10px)',
+              pointerEvents: 'all'
+            }
+          },
+            React.createElement('div', { style: { maxWidth: '1400px', margin: '0 auto' } },
+              React.createElement('h2', {
+                style: {
+                  fontSize: 'clamp(2rem, 5vw, 4rem)',
+                  color: '#00ffff',
+                  textAlign: 'center',
+                  marginBottom: '4rem',
+                  textTransform: 'uppercase',
+                  fontWeight: '900'
+                }
+              }, 'Our Facility'),
+              React.createElement('div', { className: 'gallery-grid' },
+                galleryImages.map((img, i) =>
+                  React.createElement('div', {
+                    key: i,
+                    className: 'gallery-item',
+                    onClick: () => showNotification(`Viewing ${img.title}`)
+                  },
+                    React.createElement('img', {
+                      src: img.url,
+                      alt: img.title,
+                      style: { width: '100%', height: '100%', objectFit: 'cover' }
+                    }),
+                    React.createElement('div', { className: 'gallery-overlay' },
+                      React.createElement('h3', {
+                        style: { color: '#00ffff', fontSize: '1.5rem', fontWeight: '700' }
+                      }, img.title),
+                      React.createElement('p', {
+                        style: { opacity: 0.8, marginTop: '0.5rem' }
+                      }, 'Click to explore more')
+                    )
+                  )
+                )
+              )
+            )
+          ),
+
+          // BMI Calculator Section
+          React.createElement('section', {
+            style: {
+              minHeight: '80vh',
+              padding: '100px 20px',
+              pointerEvents: 'all'
+            }
+          },
+            React.createElement('div', { 
+              style: { 
+                maxWidth: '600px', 
+                margin: '0 auto',
+                background: 'rgba(0, 0, 0, 0.7)',
+                backdropFilter: 'blur(20px)',
+                padding: '3rem',
+                borderRadius: '20px',
+                border: '2px solid rgba(0, 255, 255, 0.3)'
+              } 
+            },
+              React.createElement('h2', {
+                style: {
+                  fontSize: 'clamp(2rem, 5vw, 3rem)',
+                  color: '#00ffff',
+                  textAlign: 'center',
+                  marginBottom: '2rem',
+                  textTransform: 'uppercase',
+                  fontWeight: '900'
+                }
+              }, 'BMI Calculator'),
+              React.createElement('form', { onSubmit: calculateBMI },
+                React.createElement('div', { className: 'form-group' },
+                  React.createElement('label', null, 'Weight (kg)'),
+                  React.createElement('input', {
+                    type: 'number',
+                    step: '0.1',
+                    required: true,
+                    value: bmiData.weight,
+                    onChange: (e) => setBmiData({ ...bmiData, weight: e.target.value }),
+                    placeholder: 'Enter your weight'
+                  })
+                ),
+                React.createElement('div', { className: 'form-group' },
+                  React.createElement('label', null, 'Height (cm)'),
+                  React.createElement('input', {
+                    type: 'number',
+                    step: '0.1',
+                    required: true,
+                    value: bmiData.height,
+                    onChange: (e) => setBmiData({ ...bmiData, height: e.target.value }),
+                    placeholder: 'Enter your height'
+                  })
+                ),
+                React.createElement('button', {
+                  type: 'submit',
+                  className: 'btn-3d',
+                  style: {
+                    width: '100%',
+                    padding: '1.2rem',
+                    background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+                    border: 'none',
+                    borderRadius: '10px',
+                    color: '#fff',
+                    fontSize: '1.1rem',
+                    fontWeight: '900',
+                    cursor: 'pointer',
+                    textTransform: 'uppercase'
+                  }
+                }, 'Calculate BMI')
+              ),
+              bmiData.result && React.createElement('div', {
+                className: `calculator-result ${showBmiResult ? 'show' : ''}`,
+              },
+                React.createElement('h3', {
+                  style: {
+                    fontSize: '2rem',
+                    color: '#00ffff',
+                    marginBottom: '1rem',
+                    textAlign: 'center'
+                  }
+                }, `BMI: ${bmiData.result.bmi}`),
+                React.createElement('p', {
+                  style: {
+                    fontSize: '1.3rem',
+                    textAlign: 'center',
+                    opacity: 0.9
+                  }
+                }, `Category: ${bmiData.result.category}`)
+              )
+            )
+          ),
+
+          // Testimonials Section
+          React.createElement('section', {
+            style: {
+              minHeight: '80vh',
+              padding: '100px 20px',
+              background: 'rgba(0, 0, 0, 0.5)',
+              backdropFilter: 'blur(20px)',
+              pointerEvents: 'all'
+            }
+          },
+            React.createElement('div', { style: { maxWidth: '1200px', margin: '0 auto' } },
+              React.createElement('h2', {
+                style: {
+                  fontSize: 'clamp(2rem, 5vw, 4rem)',
+                  color: '#00ffff',
+                  textAlign: 'center',
+                  marginBottom: '4rem',
+                  textTransform: 'uppercase',
+                  fontWeight: '900'
+                }
+              }, 'Success Stories'),
+              React.createElement('div', { className: 'testimonial-carousel' },
+                testimonials.map((testimonial, i) =>
+                  React.createElement('div', {
+                    key: i,
+                    className: `testimonial-slide ${i === currentTestimonial ? 'active' : ''}`,
+                    style: {
+                      background: 'rgba(20, 20, 20, 0.9)',
+                      padding: '3rem',
+                      borderRadius: '20px',
+                      border: '2px solid rgba(0, 255, 255, 0.3)',
+                      textAlign: 'center'
+                    }
+                  },
+                    React.createElement('div', {
+                      style: {
+                        fontSize: '3rem',
+                        marginBottom: '1rem',
+                        opacity: 0.3
+                      }
+                    }, '"'),
+                    React.createElement('p', {
+                      style: {
+                        fontSize: '1.3rem',
+                        lineHeight: 1.8,
+                        marginBottom: '2rem',
+                        opacity: 0.9
+                      }
+                    }, testimonial.text),
+                    React.createElement('div', {
+                      style: {
+                        color: '#00ffff',
+                        marginBottom: '0.5rem'
+                      }
+                    }, '★'.repeat(testimonial.rating)),
+                    React.createElement('h4', {
+                      style: {
+                        fontSize: '1.5rem',
+                        color: '#00ffff',
+                        marginBottom: '0.3rem',
+                        fontWeight: '700'
+                      }
+                    }, testimonial.name),
+                    React.createElement('p', {
+                      style: { opacity: 0.6 }
+                    }, testimonial.role)
+                  )
+                )
+              ),
+              React.createElement('div', {
+                style: {
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '1rem',
+                  marginTop: '2rem'
+                }
+              },
+                testimonials.map((_, i) =>
+                  React.createElement('button', {
+                    key: i,
+                    onClick: () => setCurrentTestimonial(i),
+                    className: 'btn-3d',
+                    style: {
+                      width: '15px',
+                      height: '15px',
+                      borderRadius: '50%',
+                      background: i === currentTestimonial ? 
+                        'linear-gradient(135deg, #00ffff, #ff0055)' : 
+                        'rgba(255, 255, 255, 0.2)',
+                      border: 'none',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    }
+                  })
+                )
+              )
+            )
+          ),
+
+          // Pricing Section
+          React.createElement('section', {
+            id: 'pricing',
+            style: {
+              minHeight: '100vh',
+              padding: '100px 20px',
+              pointerEvents: 'all'
+            }
+          },
+            React.createElement('div', { style: { maxWidth: '1400px', margin: '0 auto' } },
+              React.createElement('h2', {
+                style: {
+                  fontSize: 'clamp(2rem, 5vw, 4rem)',
+                  color: '#00ffff',
+                  textAlign: 'center',
+                  marginBottom: '4rem',
+                  textTransform: 'uppercase',
+                  fontWeight: '900'
+                }
+              }, 'Membership Plans'),
+              React.createElement('div', {
+                style: {
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                  gap: '3rem'
+                }
+              },
+                [
+                  { 
+                    name: 'STARTER', 
+                    price: '$49', 
+                    features: ['Gym Floor Access', 'Locker Room', 'Basic Equipment', 'Mobile App'],
+                    highlight: false
+                  },
+                  { 
+                    name: 'ELITE', 
+                    price: '$99', 
+                    features: ['All Starter Benefits', 'Group Classes', 'Nutrition Guide', 'Sauna & Steam', 'Guest Passes'],
+                    highlight: true
+                  },
+                  { 
+                    name: 'LEGEND', 
+                    price: '$199', 
+                    features: ['All Elite Benefits', '1-on-1 Training', 'Recovery Zone', 'Massage Therapy', 'Priority Booking', 'VIP Events'],
+                    highlight: false
+                  }
+                ].map((tier, i) =>
+                  React.createElement('div', {
+                    key: i,
+                    className: 'pricing-card btn-3d',
+                    style: {
+                      padding: '3rem 2rem',
+                      background: tier.highlight 
+                        ? 'linear-gradient(135deg, rgba(0, 255, 255, 0.15), rgba(255, 0, 85, 0.15))'
+                        : 'rgba(255, 255, 255, 0.05)',
+                      backdropFilter: 'blur(20px)',
+                      border: tier.highlight 
+                        ? '3px solid #00ffff'
+                        : '1px solid rgba(255, 255, 255, 0.1)',
+                      borderRadius: '20px',
+                      transform: tier.highlight ? 'scale(1.05)' : 'scale(1)',
+                      cursor: 'pointer',
+                      position: 'relative'
+                    }
+                  },
+                    tier.highlight && React.createElement('div', {
+                      style: {
+                        position: 'absolute',
+                        top: '-15px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+                        padding: '0.5rem 2rem',
+                        borderRadius: '20px',
+                        fontSize: '0.9rem',
+                        fontWeight: '900'
+                      }
+                    }, 'MOST POPULAR'),
+                    React.createElement('h3', {
+                      style: {
+                        fontSize: '2rem',
+                        marginBottom: '1rem',
+                        color: '#00ffff',
+                        fontWeight: '900',
+                        textAlign: 'center'
+                      }
+                    }, tier.name),
+                    React.createElement('div', { 
+                      style: { 
+                        marginBottom: '2rem',
+                        textAlign: 'center' 
+                      } 
+                    },
+                      React.createElement('span', {
+                        style: { 
+                          fontSize: '4rem', 
+                          fontWeight: '900',
+                          background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent'
+                        }
+                      }, tier.price),
+                      React.createElement('span', { 
+                        style: { 
+                          opacity: 0.6,
+                          fontSize: '1.2rem'
+                        } 
+                      }, '/month')
+                    ),
+                    React.createElement('ul', {
+                      style: { 
+                        listStyle: 'none', 
+                        padding: 0, 
+                        marginBottom: '2rem' 
+                      }
+                    },
+                      tier.features.map((feature, j) =>
+                        React.createElement('li', {
+                          key: j,
+                          style: {
+                            padding: '0.8rem 0',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                            opacity: 0.9,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                          }
+                        },
+                          React.createElement('span', {
+                            style: { color: '#00ffff', fontSize: '1.2rem' }
+                          }, '✓'),
+                          feature
+                        )
+                      )
+                    ),
+                    React.createElement('button', {
+                      onClick: () => {
+                        setFormData({ ...formData, membership: tier.name });
+                        setShowModal('join');
+                      },
+                      className: 'btn-3d',
+                      style: {
+                        width: '100%',
+                        padding: '1.2rem',
+                        background: tier.highlight 
+                          ? 'linear-gradient(135deg, #00ffff, #ff0055)'
+                          : 'rgba(0, 255, 255, 0.2)',
+                        border: 'none',
+                        borderRadius: '10px',
+                        color: '#fff',
+                        fontSize: '1.1rem',
+                        fontWeight: '900',
+                        cursor: 'pointer',
+                        textTransform: 'uppercase'
+                      }
+                    }, 'Choose Plan')
+                  )
+                )
+              )
+            )
+          ),
+
+          // Contact Section
+          React.createElement('section', {
+            id: 'contact',
+            style: {
+              minHeight: '100vh',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '100px 20px',
+              background: 'rgba(0, 0, 0, 0.5)',
+              backdropFilter: 'blur(20px)',
+              pointerEvents: 'all'
+            }
+          },
+            React.createElement('div', { 
+              style: { 
+                maxWidth: '600px',
+                width: '100%',
+                textAlign: 'center'
+              } 
+            },
+              React.createElement('h2', {
+                style: {
+                  fontSize: 'clamp(2.5rem, 8vw, 5rem)',
+                  fontWeight: '900',
+                  marginBottom: '2rem',
+                  textTransform: 'uppercase',
+                  background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }
+              }, 'Transform Today'),
+              React.createElement('p', {
+                style: {
+                  fontSize: '1.3rem',
+                  opacity: 0.8,
+                  marginBottom: '3rem',
+                  lineHeight: 1.6
+                }
+              }, 'Join thousands of members who have transformed their lives. Your journey to greatness starts now.'),
+              React.createElement('div', {
+                style: { display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }
+              },
+                React.createElement('button', {
+                  onClick: () => setShowModal('join'),
+                  className: 'btn-3d',
+                  style: {
+                    padding: '1.5rem 3rem',
+                    fontSize: '1.3rem',
+                    fontWeight: '900',
+                    background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+                    border: 'none',
+                    borderRadius: '50px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    boxShadow: '0 20px 40px rgba(0, 255, 255, 0.4)'
+                  }
+                }, 'Start Now'),
+                React.createElement('button', {
+                  onClick: () => setShowModal('contact'),
+                  className: 'btn-3d',
+                  style: {
+                    padding: '1.5rem 3rem',
+                    fontSize: '1.3rem',
+                    fontWeight: '900',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '2px solid #00ffff',
+                    borderRadius: '50px',
+                    color: '#fff',
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    backdropFilter: 'blur(10px)'
+                  }
+                }, 'Contact Us')
+              ),
+              React.createElement('div', {
+                style: {
+                  marginTop: '4rem',
+                  display: 'flex',
+                  gap: '2rem',
+                  justifyContent: 'center',
+                  flexWrap: 'wrap'
+                }
+              },
+                [
+                  { icon: '📍', text: '123 Fitness Ave, NYC' },
+                  { icon: '📞', text: '+1 (555) 123-4567' },
+                  { icon: '✉️', text: 'info@eliteforge.com' }
+                ].map((contact, i) =>
+                  React.createElement('div', {
+                    key: i,
+                    style: {
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '1.1rem',
+                      opacity: 0.8
+                    }
+                  },
+                    React.createElement('span', { style: { fontSize: '1.5rem' } }, contact.icon),
+                    contact.text
+                  )
+                )
+              )
+            )
+          ),
+
+          // Footer
+          React.createElement('footer', {
+            style: {
+              padding: '4rem 20px',
+              background: 'rgba(0, 0, 0, 0.9)',
+              borderTop: '2px solid rgba(0, 255, 255, 0.2)',
+              pointerEvents: 'all'
+            }
+          },
+            React.createElement('div', {
+              style: {
+                maxWidth: '1400px',
+                margin: '0 auto',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gap: '3rem',
+                marginBottom: '2rem'
+              }
+            },
+              React.createElement('div', null,
+                React.createElement('h3', {
+                  style: {
+                    fontSize: '1.5rem',
+                    color: '#00ffff',
+                    marginBottom: '1rem',
+                    fontWeight: '900'
+                  }
+                }, 'ELITE FORGE'),
+                React.createElement('p', {
+                  style: { opacity: 0.7, lineHeight: 1.6 }
+                }, 'The ultimate 3D fitness experience. Transform your body, mind, and soul.')
+              ),
+              React.createElement('div', null,
+                React.createElement('h4', {
+                  style: {
+                    fontSize: '1.2rem',
+                    color: '#00ffff',
+                    marginBottom: '1rem',
+                    fontWeight: '700'
+                  }
+                }, 'Quick Links'),
+                ['About', 'Services', 'Trainers', 'Schedule', 'Blog'].map(link =>
+                  React.createElement('p', {
+                    key: link,
+                    style: {
+                      opacity: 0.7,
+                      marginBottom: '0.5rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease'
+                    },
+                    onMouseEnter: (e) => e.target.style.color = '#00ffff',
+                    onMouseLeave: (e) => e.target.style.color = '#fff',
+                    onClick: () => showNotification(`Navigating to ${link}`)
+                  }, link)
+                )
+              ),
+              React.createElement('div', null,
+                React.createElement('h4', {
+                  style: {
+                    fontSize: '1.2rem',
+                    color: '#00ffff',
+                    marginBottom: '1rem',
+                    fontWeight: '700'
+                  }
+                }, 'Hours'),
+                React.createElement('p', { style: { opacity: 0.7 } }, 'Mon-Fri: 5:00 AM - 11:00 PM'),
+                React.createElement('p', { style: { opacity: 0.7 } }, 'Sat-Sun: 6:00 AM - 10:00 PM'),
+                React.createElement('p', { style: { opacity: 0.7, marginTop: '1rem' } }, '24/7 Access for Elite & Legend Members')
+              ),
+              React.createElement('div', null,
+                React.createElement('h4', {
+                  style: {
+                    fontSize: '1.2rem',
+                    color: '#00ffff',
+                    marginBottom: '1rem',
+                    fontWeight: '700'
+                  }
+                }, 'Follow Us'),
+                React.createElement('div', {
+                  style: { display: 'flex', gap: '1rem' }
+                },
+                  ['Facebook', 'Instagram', 'Twitter', 'YouTube'].map(social =>
+                    React.createElement('button', {
+                      key: social,
+                      onClick: () => showNotification(`Opening ${social}`),
+                      className: 'btn-3d',
+                      style: {
+                        width: '50px',
+                        height: '50px',
+                        borderRadius: '50%',
+                        background: 'rgba(0, 255, 255, 0.1)',
+                        border: '2px solid rgba(0, 255, 255, 0.3)',
+                        color: '#00ffff',
+                        fontSize: '1.2rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }
+                    }, social[0])
+                  )
+                )
+              )
+            ),
+            React.createElement('div', {
+              style: {
+                textAlign: 'center',
+                paddingTop: '2rem',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                opacity: 0.6
+              }
+            }, '© 2026 Elite Forge Gym. All rights reserved.')
+          )
+        ),
+
+        // Sound Toggle Button
+        React.createElement('button', {
+          onClick: () => {
+            setSoundEnabled(!soundEnabled);
+            showNotification(soundEnabled ? 'Sound Disabled' : 'Sound Enabled');
+          },
+          className: 'btn-3d',
+          style: {
+            position: 'fixed',
+            bottom: '2rem',
+            right: '2rem',
+            width: '70px',
+            height: '70px',
+            borderRadius: '50%',
+            background: soundEnabled 
+              ? 'linear-gradient(135deg, #00ffff, #ff0055)'
+              : 'rgba(0, 0, 0, 0.8)',
+            border: '2px solid ' + (soundEnabled ? '#00ffff' : 'rgba(255, 255, 255, 0.3)'),
+            color: '#fff',
+            fontSize: '2rem',
+            cursor: 'pointer',
+            zIndex: 4500,
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 10px 30px rgba(0, 255, 255, 0.3)',
+            pointerEvents: 'all'
+          }
+        }, soundEnabled ? '🔊' : '🔇'),
+
+        // Scroll to Top Button
+        React.createElement('button', {
+          onClick: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+          className: 'btn-3d',
+          style: {
+            position: 'fixed',
+            bottom: '2rem',
+            left: '2rem',
+            width: '70px',
+            height: '70px',
+            borderRadius: '50%',
+            background: 'rgba(0, 0, 0, 0.8)',
+            border: '2px solid rgba(0, 255, 255, 0.5)',
+            color: '#00ffff',
+            fontSize: '2rem',
+            cursor: 'pointer',
+            zIndex: 4500,
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 10px 30px rgba(0, 255, 255, 0.3)',
+            pointerEvents: 'all'
+          }
+        }, '↑'),
+
+        // Modals
+        React.createElement('div', {
+          className: `modal ${showModal ? 'active' : ''}`,
+          onClick: () => setShowModal(null),
+          style: { pointerEvents: showModal ? 'all' : 'none' }
+        },
+          React.createElement('div', {
+            className: 'modal-content',
+            onClick: (e) => e.stopPropagation()
+          },
+            React.createElement('button', {
+              onClick: () => setShowModal(null),
+              style: {
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                background: 'rgba(255, 0, 85, 0.2)',
+                border: '2px solid #ff0055',
+                color: '#fff',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }
+            }, '×'),
+            
+            showModal === 'join' && React.createElement('div', null,
+              React.createElement('h2', {
+                style: {
+                  fontSize: '2rem',
+                  color: '#00ffff',
+                  marginBottom: '2rem',
+                  textAlign: 'center',
+                  textTransform: 'uppercase'
+                }
+              }, 'Join Elite Forge'),
+              React.createElement('form', { onSubmit: handleSubmit },
+                React.createElement('div', { className: 'form-group' },
+                  React.createElement('label', null, 'Full Name *'),
+                  React.createElement('input', {
+                    type: 'text',
+                    required: true,
+                    value: formData.name,
+                    onChange: (e) => setFormData({ ...formData, name: e.target.value }),
+                    placeholder: 'John Doe'
+                  })
+                ),
+                React.createElement('div', { className: 'form-group' },
+                  React.createElement('label', null, 'Email *'),
+                  React.createElement('input', {
+                    type: 'email',
+                    required: true,
+                    value: formData.email,
+                    onChange: (e) => setFormData({ ...formData, email: e.target.value }),
+                    placeholder: 'john@example.com'
+                  })
+                ),
+                React.createElement('div', { className: 'form-group' },
+                  React.createElement('label', null, 'Phone *'),
+                  React.createElement('input', {
+                    type: 'tel',
+                    required: true,
+                    value: formData.phone,
+                    onChange: (e) => setFormData({ ...formData, phone: e.target.value }),
+                    placeholder: '+1 (555) 123-4567'
+                  })
+                ),
+                React.createElement('div', { className: 'form-group' },
+                  React.createElement('label', null, 'Membership Plan *'),
+                  React.createElement('select', {
+                    required: true,
+                    value: formData.membership,
+                    onChange: (e) => setFormData({ ...formData, membership: e.target.value })
+                  },
+                    React.createElement('option', { value: '' }, 'Select a plan'),
+                    React.createElement('option', { value: 'STARTER' }, 'Starter - $49/month'),
+                    React.createElement('option', { value: 'ELITE' }, 'Elite - $99/month'),
+                    React.createElement('option', { value: 'LEGEND' }, 'Legend - $199/month')
+                  )
+                ),
+                React.createElement('button', {
+                  type: 'submit',
+                  className: 'btn-3d',
+                  style: {
+                    width: '100%',
+                    padding: '1.2rem',
+                    background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+                    border: 'none',
+                    borderRadius: '10px',
+                    color: '#fff',
+                    fontSize: '1.1rem',
+                    fontWeight: '900',
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    marginTop: '1rem'
+                  }
+                }, 'Submit Application')
+              )
+            ),
+
+            showModal === 'contact' && React.createElement('div', null,
+              React.createElement('h2', {
+                style: {
+                  fontSize: '2rem',
+                  color: '#00ffff',
+                  marginBottom: '2rem',
+                  textAlign: 'center',
+                  textTransform: 'uppercase'
+                }
+              }, 'Contact Us'),
+              React.createElement('form', { onSubmit: handleSubmit },
+                React.createElement('div', { className: 'form-group' },
+                  React.createElement('label', null, 'Name *'),
+                  React.createElement('input', {
+                    type: 'text',
+                    required: true,
+                    value: formData.name,
+                    onChange: (e) => setFormData({ ...formData, name: e.target.value }),
+                    placeholder: 'Your name'
+                  })
+                ),
+                React.createElement('div', { className: 'form-group' },
+                  React.createElement('label', null, 'Email *'),
+                  React.createElement('input', {
+                    type: 'email',
+                    required: true,
+                    value: formData.email,
+                    onChange: (e) => setFormData({ ...formData, email: e.target.value }),
+                    placeholder: 'your@email.com'
+                  })
+                ),
+                React.createElement('div', { className: 'form-group' },
+                  React.createElement('label', null, 'Message *'),
+                  React.createElement('textarea', {
+                    required: true,
+                    rows: 5,
+                    value: formData.message,
+                    onChange: (e) => setFormData({ ...formData, message: e.target.value }),
+                    placeholder: 'How can we help you?'
+                  })
+                ),
+                React.createElement('button', {
+                  type: 'submit',
+                  className: 'btn-3d',
+                  style: {
+                    width: '100%',
+                    padding: '1.2rem',
+                    background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+                    border: 'none',
+                    borderRadius: '10px',
+                    color: '#fff',
+                    fontSize: '1.1rem',
+                    fontWeight: '900',
+                    cursor: 'pointer',
+                    textTransform: 'uppercase',
+                    marginTop: '1rem'
+                  }
+                }, 'Send Message')
+              )
+            ),
+
+            showModal === 'tour' && React.createElement('div', { style: { textAlign: 'center' } },
+              React.createElement('h2', {
+                style: {
+                  fontSize: '2rem',
+                  color: '#00ffff',
+                  marginBottom: '2rem',
+                  textTransform: 'uppercase'
+                }
+              }, 'Virtual Tour'),
+              React.createElement('p', {
+                style: { fontSize: '1.2rem', opacity: 0.8, marginBottom: '2rem' }
+              }, 'Experience our facility in stunning 3D'),
+              React.createElement('div', {
+                style: {
+                  width: '100%',
+                  height: '300px',
+                  background: 'rgba(0, 255, 255, 0.1)',
+                  borderRadius: '15px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '2rem',
+                  border: '2px solid rgba(0, 255, 255, 0.3)'
+                }
+              },
+                React.createElement('p', {
+                  style: { fontSize: '3rem', opacity: 0.5 }
+                }, '🏋️')
+              ),
+              React.createElement('button', {
+                onClick: () => {
+                  showNotification('Virtual tour started!');
+                  setShowModal(null);
+                },
+                className: 'btn-3d',
+                style: {
+                  padding: '1rem 3rem',
+                  background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+                  border: 'none',
+                  borderRadius: '10px',
+                  color: '#fff',
+                  fontSize: '1.1rem',
+                  fontWeight: '900',
+                  cursor: 'pointer',
+                  textTransform: 'uppercase'
+                }
+              }, 'Start Tour')
+            )
+          )
+        ),
+
+        // Toast Notification
+        React.createElement('div', {
+          className: `toast ${showToast ? 'show' : ''}`,
+        },
+          React.createElement('p', {
+            style: { fontSize: '1.1rem', fontWeight: '700' }
+          }, toastMessage)
+        ),
+
+        // Loading Screen
+        !isLoaded && React.createElement('div', {
+          style: {
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: '#000',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            zIndex: 9999,
+            pointerEvents: 'all'
+          }
+        },
+          React.createElement('div', {
+            style: {
+              fontSize: '3rem',
+              fontWeight: '900',
+              background: 'linear-gradient(135deg, #00ffff, #ff0055)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              marginBottom: '2rem',
+              animation: 'pulse 2s infinite'
+            }
+          }, 'ELITE FORGE'),
+          React.createElement('div', {
+            style: {
+              width: '200px',
+              height: '4px',
+              background: 'rgba(255, 255, 255, 0.1)',
+              borderRadius: '2px',
+              overflow: 'hidden'
+            }
+          },
+            React.createElement('div', {
+              style: {
+                width: '50%',
+                height: '100%',
+                background: 'linear-gradient(90deg, #00ffff, #ff0055)',
+                animation: 'loading 1.5s ease-in-out infinite'
+              }
+            })
+          )
+        )
+      );
+    }
+
+    // Render
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(EliteForge3D));
+  </script>
+
+  <style>
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    @keyframes loading {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(300%);
+      }
+    }
+  </style>
+</body>
+</html>
